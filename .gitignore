@@ -39,3 +39,7 @@
 
 # debug information files
 *.dwo
+
+# Refer Documents
+/Documents/*
+/TaskPlans/*

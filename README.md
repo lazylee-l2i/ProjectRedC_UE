@@ -10,22 +10,33 @@
 ---
 
 ## 1. 프로젝트 개요
+![](Resources/ProjectRedC_Logo.png)
+
+`프로젝트 이름` : **Project RedC 능력자들**  
+`프로젝트 전체 파일` : [네이버 MYBOX](https://naver.me/GNRlyRrR)  
+`Youtube` : 추후 영상작업 끝나면 추가 예정
 
 ### 1.1 프로젝트 목적
-Unreal Engine 5 기반 멀티플레이어 액션 RPG의 **GAS(Gameplay Ability System) 통합 전투 시스템** 구현
+`Unreal Engine 5` 기반 멀티플레이어 액션 RPG의 **GAS(Gameplay Ability System) 통합 전투 시스템** 구현  
+`Cyphers` 모작 프로젝트
 
 ### 1.2 핵심 기술 스택
-- **엔진**: Unreal Engine 5.2.1
+- **엔진**: Unreal Engine 5.4.4
 - **프로그래밍**: C++17
 - **네트워킹**: Unreal Replication System
-- **애니메이션**: Animation Notify System + Motion Warping
+- **애니메이션**: Animation Notify System(판정) + Motion Warping(스킬 이동거리)
 - **게임플레이**: Gameplay Ability System (GAS)
 
 ### 1.3 주요 특징
 - **컴포넌트 기반 아키텍처**: 모듈화된 전투 시스템
 - **네트워크 동기화**: 클라이언트-서버 RPC 패턴
-- **이벤트 주도 설계**: GAS Event System 활용
+- **이벤트 주도 설계**: GAS Event System 및 AnimNotify 활용
 - **성능 최적화**: ASC 캐싱, 조건부 틱 활성화
+
+### 1.4 프로젝트 로드맵
+![](Resources/로드맵.png)
+- **총 개발 인력** : 5명
+- **총 개발 시간** : 2025년 9월 1일 ~ 2025년 11월 10일
 
 ---
 
@@ -113,7 +124,7 @@ classDiagram
     UCombatComponent --> UAbilitySystemComponent : caches
 ```
 
-#### 3.1.1 아키텍처 결정사항
+#### 3.1.1 주요 아키텍처
 
 **1) ASC 캐싱 시스템 (Cache Pattern)**
 ```cpp
@@ -189,7 +200,7 @@ classDiagram
     ARedCCharacter ..> IRedCCombatSystem : implements
 ```
 
-#### 3.2.1 핵심 설계 결정
+#### 3.2.1 핵심 설계
 
 **1) 상태 머신 기반 히트박스 관리**
 ```cpp
@@ -202,9 +213,13 @@ void ARedCCharacter::SwitchHitBoxStateToKnockdown_Implementation()
 ```
 - **2개의 히트박스**: Standing(서 있을 때), Knockdown(넘어졌을 때)
 - **상태 전환**: NetMulticast RPC로 모든 클라이언트 동기화
-- **이유**: 넘어진 상태에서 다른 판정 영역 적용
+- **이유**:  
+  1) 넘어진 상태에서 다른 판정 영역 적용
+  2) 모든 클라이언트에 동일한 Collision 영역 동작 보장  
+  
+**2) 타이머 기반 자동 복구 시스템**  
+![GetupFunction](/Resources/GetupFunction.gif)  
 
-**2) 타이머 기반 자동 복구 시스템**
 ```cpp
 void ARedCCharacter::StartGetUpTimer()
 {
@@ -235,7 +250,7 @@ DOREPLIFETIME_CONDITION_NOTIFY(ARedCCharacter, IsDead, COND_None, REPNOTIFY_OnCh
 ## 4. 전투 시스템 상세 설명
 
 ### 4.1 근거리 공격 시스템
-
+![MeleeAttackCombo](/Resources/Warrior_FullCombo.gif)
 #### 4.1.1 ANS_MeleeAttackHitScan 구조
 ```mermaid
 sequenceDiagram
@@ -272,6 +287,7 @@ else if (MeshComp->GetOwner<ARedCHeroCharacter>()) {
 - **AI**: 서버에서만 히트 검출 (Authority)
 - **Player**: 자신의 클라이언트에서만 검출 (AutonomousProxy)
 - **이유**: 네트워크 트래픽 최소화, 지연시간 감소
+- **클라이언트에서 검출하는 이유**: 서버에서는 랜더링이 이뤄지지 않아 실제로 애니메이션 동작에 따른 Skeletal Mesh의 Socket의 위치가 변하지 않음. 고로, 클라이언트에서 검출 후 서버에서 검증
 
 #### 4.1.3 중복 타격 방지
 ```cpp
@@ -286,7 +302,7 @@ const bool bAlreadyHit = HitActors.ContainsByPredicate([HitActor](const TWeakObj
 - **NotifyState 종료 시**: HitActors 자동 초기화
 
 ### 4.2 원거리 공격 시스템
-
+![RangedFullCombo](/Resources/Archer_FullCombo.gif)
 #### 4.2.2 AN_ProjectileSpawnEvent 플로우
 ```mermaid
 sequenceDiagram
@@ -311,6 +327,7 @@ sequenceDiagram
 ```
 
 #### 4.2.2 크로스헤어 기반 방향 계산
+![CrossHair](/Resources/Archer_L.gif)
 ```cpp
 const FVector Direction = CrosshairComponent 
     ? CrosshairComponent->GetCrosshairDirection(SpawnLocation, Distance) 
@@ -423,7 +440,6 @@ class URedCGameplayAbility : public UGameplayAbility {
 ```
 - **캡슐화**: 각 스킬을 독립적인 Ability 클래스로 구현
 - **실행 취소**: EndAbility로 정리 작업
-- **큐잉**: AbilityQueue를 통한 스킬 연계
 
 #### 5.1.2 Observer Pattern (Delegate System)
 ```cpp
@@ -446,27 +462,7 @@ FGameplayEffectSpecHandle GenerateEncounterEffectHandle(...);
 - **일관성**: 동일한 방식으로 Effect 생성
 - **확장성**: 새로운 Effect 타입 추가 용이
 
-#### 5.1.4 Strategy Pattern (Attack Types)
-```mermaid
-classDiagram
-    class AttackStrategy {
-        <<interface>>
-        +Execute()
-    }
-    class MeleeAttackStrategy {
-        +Execute() BoxTrace
-    }
-    class RangedAttackStrategy {
-        +Execute() SpawnProjectile
-    }
-    
-    AttackStrategy <|-- MeleeAttackStrategy
-    AttackStrategy <|-- RangedAttackStrategy
-```
-- **런타임 전환**: AnimNotify에서 공격 타입 결정
-- **독립성**: 근거리/원거리 로직 완전 분리
-
-#### 5.1.5 Component Pattern
+#### 5.1.4 Component Pattern
 ```cpp
 ARedCCharacter {
     UCombatComponent* CombatSystem;           // 전투 로직
@@ -485,10 +481,6 @@ graph TB
     Client[Client] -->|ServerReceiveHitReactData| Server[Server]
     Server -->|ClientActivateHitReact| Client
     Server -->|MulticastPlayMontage| All[All Clients]
-    
-    style Server fill:#f96
-    style Client fill:#9cf
-    style All fill:#9f9
 ```
 
 **RPC 타입별 사용 용도:**
@@ -528,33 +520,20 @@ float DistSquared = FVector::DistSquared(A, B);
 if (DistSquared > MaxRangeSquared) { /* 너무 멀음 */ }
 ```
 
-### 5.4 확장성 고려사항
-
-#### 5.4.1 새로운 공격 타입 추가
-1. `UAnimNotify` 상속 클래스 생성
-2. `FHitReactMessage` 구조체에 필요한 필드 추가
-3. `CombatComponent`는 수정 불필요 (개방-폐쇄 원칙)
-
-#### 5.4.2 새로운 히트 리액션 추가
-1. `GameplayAbility` 생성
-2. `HitStrengthTag` 정의
-3. `ProcessHitReaction`에서 태그로 Ability 활성화
-
 ---
 
 ## 6. 기술 부채 및 개선 방향
 
 ### 6.1 현재 제한사항
 - **히트박스 정확도**: Box Collision 사용 (Capsule/Sphere 고려)
-- **멀티 타겟 공격**: 현재 배열로 관리, 최적화 필요
+- ~~**컨테이너 변경**: 현재 배열(TArray)로 관리, 최적화 필요~~ 해결 완료, TQueue로 전환
 - **리플레이 시스템**: 미구현
 
 ### 6.2 향후 개선 계획
 - **Animation Budget Allocator** 통합
 - **Predictive Hit Detection** 구현 (지연 보상)
-- **Gameplay Debugger** 커스텀 카테고리 추가
-- **Area Attack** 시스템 추가
 - **Buff/Debuff** Effect 확장
+- **좌표지정 공격 능력** 구현
 
 ---
 
@@ -563,10 +542,10 @@ if (DistSquared > MaxRangeSquared) { /* 너무 멀음 */ }
 본 프로젝트는 **GAS의 강력함**과 **컴포넌트 기반 설계의 유연성**을 결합하여, 확장 가능하고 유지보수가 용이한 전투 시스템을 구축하였습니다.
 
 ### 7.1 핵심 성과
-- ✅ **모듈화**: 각 기능이 독립적인 컴포넌트로 분리
-- ✅ **네트워크 안정성**: 서버 검증 레이어 구축
-- ✅ **성능**: 조건부 틱, ASC 캐싱으로 최적화
-- ✅ **확장성**: 새로운 스킬/리액션 추가 용이
+- **모듈화**: 각 기능이 독립적인 컴포넌트로 분리
+- **네트워크 안정성**: 서버 검증 레이어 구축
+- **성능**: 조건부 틱, ASC 캐싱으로 최적화
+- **확장성**: 새로운 스킬/리액션 추가 용이
 
 ### 7.2 아키텍처 강점
 ```mermaid
@@ -580,7 +559,6 @@ mindmap
       조건부 틱
       네트워크 최적화
     확장성
-      Strategy 패턴
       Event 기반
       개방-폐쇄 원칙
     안정성
@@ -595,11 +573,10 @@ mindmap
 1. **GAS 통합**: AnimNotify와 GameplayAbility의 유기적 연결
 2. **네트워크 프로그래밍**: Authority/Role 기반 실행 분기
 3. **성능 최적화**: 캐싱, 조건부 틱, RPC 최소화
-4. **디자인 패턴**: Command, Observer, Factory, Strategy 패턴 실전 적용
+4. **디자인 패턴**: Command, Observer, Factory 패턴 실전 적용
 5. **아키텍처 설계**: 모듈화, 확장성, 유지보수성을 고려한 시스템 구축
 
 ---
 
-**개발 환경**: Unreal Engine 5.2.1 | C++17 | Visual Studio 2022  
-**라이선스**: MIT License  
-**최종 업데이트**: 2025.11.25
+**개발 환경**: Unreal Engine 5.4.4 | C++17 | Visual Studio 2022  
+**최종 업데이트**: 2025.11.28
