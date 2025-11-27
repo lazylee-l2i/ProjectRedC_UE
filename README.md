@@ -547,27 +547,7 @@ if (DistSquared > MaxRangeSquared) { /* 너무 멀음 */ }
 - **성능**: 조건부 틱, ASC 캐싱으로 최적화
 - **확장성**: 새로운 스킬/리액션 추가 용이
 
-### 7.2 아키텍처 강점
-```mermaid
-mindmap
-  root((전투 시스템))
-    모듈화
-      Component 패턴
-      Ability 독립성
-    성능
-      ASC 캐싱
-      조건부 틱
-      네트워크 최적화
-    확장성
-      Event 기반
-      개방-폐쇄 원칙
-    안정성
-      서버 검증
-      RPC 패턴
-      상태 동기화
-```
-
-### 7.3 학습 포인트
+### 7.2 학습 포인트
 본 프로젝트를 통해 다음과 같은 핵심 개념을 습득할 수 있습니다:
 
 1. **GAS 통합**: AnimNotify와 GameplayAbility의 유기적 연결
