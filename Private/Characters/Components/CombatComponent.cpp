@@ -73,14 +73,14 @@ UAbilitySystemComponent* UCombatComponent::TryGetActorASCInMap(AActor* Actor) co
 		return nullptr;
 	}
 	
-	if (CachedASCMap.Find(Actor))
+	if (UAbilitySystemComponent* ASC = GetActorASCInMap(Actor))
 	{
-		return CachedASCMap.FindRef(Actor);
+		return ASC;
 	}
 	else
 	{
 		SetActorASCInMap(Actor);
-		return CachedASCMap.FindRef(Actor);
+		return GetActorASCInMap(Actor);
 	}
 }
 
@@ -105,13 +105,13 @@ void UCombatComponent::PushHitMessage(FHitReactMessage& Message)
 			UE_LOG(LogRedC, Warning, TEXT("Player is Death. Ignore HitReactMessage"));
 			return;
 		}
-		if (ASC->HasMatchingGameplayTag(PlayerStateTags::Player_State_Combat_KnockedDown) && Message.HitStrengthTag == SharedTags::Event_Shared_HitReact_Light.GetTag())
+		if (ASC->HasMatchingGameplayTag(PlayerStateTags::Player_State_Combat_KnockedDown) && 
+				Message.HitStrengthTag == SharedTags::Event_Shared_HitReact_Light.GetTag())
 		{
 			Message.HitStrengthTag = SharedTags::Event_Shared_HitReact_Heavy.GetTag();
 		}
 		Message.bInit = true;
 
-		//UE_LOG(LogRedCServer, Log, TEXT("5. Pushing HitReactMessage"));
 		HitReactMessages.Enqueue(Message);
 		++CachedHitReactMessageCount;
 		SetComponentTickEnabled(true);
@@ -133,10 +133,8 @@ FHitReactMessage UCombatComponent::PopHitMessage()
 
 void UCombatComponent::ProcessHitMessage()
 {
-	//UE_LOG(LogRedCServer, Log, TEXT("6. Enter ProcessHitReact."))
 	if (ARedCCharacter* Character = Cast<ARedCCharacter>(GetOwner()))
 	{
-		//UE_LOG(LogRedCServer, Log, TEXT("7. Sending Client Hit Message"));
 		FHitReactMessage Message;
 		HitReactMessages.Peek(Message);
 		FGameplayTag HitStrengthTag = Message.HitStrengthTag;

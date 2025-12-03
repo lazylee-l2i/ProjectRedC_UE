@@ -35,12 +35,11 @@ void UHeavyHitReactAbility::ActivateAbility(const FGameplayAbilitySpecHandle Han
 		if (ARedCCharacter* OwnerCharacter = Cast<ARedCCharacter>(GetAvatarActorFromActorInfo()))
 		{
 			// Project에서 설정한 중력값 가져옴
-			float Gravity = FMath::Abs(GetWorld()->GetGravityZ());
-			// 
-			float ZVelocity = FMath::Sqrt(4.f * Gravity * GetHitData().KnockDownHeight);
+			float Gravity = FMath::Abs(GetWorld()->GetGravityZ()); // Project Setting에서 설정한 중력값 가져옴
+			float ZVelocity = FMath::Sqrt(2.f * 2.f * Gravity * GetHitData().KnockDownHeight);
 			
 			FVector LaunchVelocity = FVector::UpVector * ZVelocity +
-										GetHitData().AttackDirection * GetHitData().KnockbackDistance * 2.f;
+										GetHitData().AttackDirection * GetHitData().KnockbackDistance;
 			
 			FRotator LookAtAttackerRotation = GetHitData().AttackDirection.Rotation() +
 												FRotator(0.f, 180.f, 0.f);

@@ -154,11 +154,8 @@ void AGameModeArena::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
 
-	//UE_LOG(LogRedCBeacon, Warning, TEXT("Now Arena Server Player Num : %d"), GetNumPlayers()-1);
-	
 	if (GetNumPlayers() - 1 == 0) 
 	{
-		//UE_LOG(LogRedCBeacon, Warning, TEXT("Server ResetStart"));
 		GetWorld()->ServerTravel("?Restart");
 	}
 }

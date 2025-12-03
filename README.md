@@ -10,11 +10,10 @@
 ---
 
 ## 1. 프로젝트 개요
-![](Resources/ProjectRedC_Logo.png)
-
+![](Resources/ProjectRedC_Logo.png)  
 `프로젝트 이름` : **Project RedC 능력자들**  
 `프로젝트 전체 파일` : [네이버 MYBOX](https://naver.me/GNRlyRrR)  
-`Youtube` : 추후 영상작업 끝나면 추가 예정
+`Youtube` : [Youtube](https://youtu.be/6borv5ggV6M)
 
 ### 1.1 프로젝트 목적
 `Unreal Engine 5` 기반 멀티플레이어 액션 RPG의 **GAS(Gameplay Ability System) 통합 전투 시스템** 구현  
@@ -431,17 +430,7 @@ OwnerASC->ExecuteGameplayCue(GameplayCueTags::GameplayCue_Shared_CameraShake, Cu
 
 ### 5.1 적용된 디자인 패턴
 
-#### 5.1.1 Command Pattern (GameplayAbility)
-```cpp
-class URedCGameplayAbility : public UGameplayAbility {
-    virtual void ActivateAbility(...) override;  // Execute
-    virtual void EndAbility(...) override;       // Undo
-};
-```
-- **캡슐화**: 각 스킬을 독립적인 Ability 클래스로 구현
-- **실행 취소**: EndAbility로 정리 작업
-
-#### 5.1.2 Observer Pattern (Delegate System)
+#### 5.1.1 Observer Pattern (Delegate System)
 ```cpp
 // Health 변화 감지
 GetGameplayAttributeValueChangeDelegate(URedCHealthSet::GetHealthAttribute())
@@ -454,7 +443,7 @@ ASC->RegisterGameplayTagEvent(PlayerStateTags::Player_State_Death)
 - **느슨한 결합**: ASC와 캐릭터 로직 분리
 - **이벤트 주도**: 상태 변화에 자동 반응
 
-#### 5.1.3 Factory Pattern (Effect Creation)
+#### 5.1.2 Factory Pattern (Effect Creation)
 ```cpp
 FGameplayEffectSpecHandle GenerateDamageEffectHandle(...);
 FGameplayEffectSpecHandle GenerateEncounterEffectHandle(...);
@@ -462,16 +451,6 @@ FGameplayEffectSpecHandle GenerateEncounterEffectHandle(...);
 - **일관성**: 동일한 방식으로 Effect 생성
 - **확장성**: 새로운 Effect 타입 추가 용이
 
-#### 5.1.4 Component Pattern
-```cpp
-ARedCCharacter {
-    UCombatComponent* CombatSystem;           // 전투 로직
-    UMotionWarpingComponent* MotionWarpingComp;  // 모션 워핑
-    UCrosshairComponent* CrosshairComponent;   // 조준
-}
-```
-- **모듈화**: 기능별 컴포넌트 분리
-- **재사용**: 다른 캐릭터 타입에서도 동일 컴포넌트 사용
 
 ### 5.2 네트워크 아키텍처
 
@@ -487,19 +466,6 @@ graph TB
 - **Server RPC**: 히트 데이터 전송, 데미지 적용 요청
 - **Client RPC**: 특정 플레이어에게 UI 업데이트
 - **Multicast RPC**: 모든 클라이언트에 애니메이션 동기화
-
-#### 5.2.2 Authority 체크 패턴
-```cpp
-if (GetOwner()->HasAuthority()) {
-    // 서버에서만 실행되는 로직
-    ApplyGameplayEffect(...);
-}
-
-if (GetLocalRole() == ROLE_AutonomousProxy) {
-    // 로컬 플레이어에서만 실행
-    PerformTrace(...);
-}
-```
 
 ### 5.3 성능 최적화 전략
 
@@ -526,7 +492,6 @@ if (DistSquared > MaxRangeSquared) { /* 너무 멀음 */ }
 
 ### 6.1 현재 제한사항
 - **히트박스 정확도**: Box Collision 사용 (Capsule/Sphere 고려)
-- ~~**컨테이너 변경**: 현재 배열(TArray)로 관리, 최적화 필요~~ 해결 완료, TQueue로 전환
 - **리플레이 시스템**: 미구현
 
 ### 6.2 향후 개선 계획
@@ -545,18 +510,4 @@ if (DistSquared > MaxRangeSquared) { /* 너무 멀음 */ }
 - **모듈화**: 각 기능이 독립적인 컴포넌트로 분리
 - **네트워크 안정성**: 서버 검증 레이어 구축
 - **성능**: 조건부 틱, ASC 캐싱으로 최적화
-- **확장성**: 새로운 스킬/리액션 추가 용이
-
-### 7.2 학습 포인트
-본 프로젝트를 통해 다음과 같은 핵심 개념을 습득할 수 있습니다:
-
-1. **GAS 통합**: AnimNotify와 GameplayAbility의 유기적 연결
-2. **네트워크 프로그래밍**: Authority/Role 기반 실행 분기
-3. **성능 최적화**: 캐싱, 조건부 틱, RPC 최소화
-4. **디자인 패턴**: Command, Observer, Factory 패턴 실전 적용
-5. **아키텍처 설계**: 모듈화, 확장성, 유지보수성을 고려한 시스템 구축
-
----
-
-**개발 환경**: Unreal Engine 5.4.4 | C++17 | Visual Studio 2022  
-**최종 업데이트**: 2025.11.28
+- **확장성**: 새로운 스킬/리액션 추가 용이  

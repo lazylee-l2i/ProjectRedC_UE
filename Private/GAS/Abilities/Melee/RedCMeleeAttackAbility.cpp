@@ -70,7 +70,9 @@ void URedCMeleeAttackAbility::SetupMeleeAttackTasks()
 {
 	// 근거리 공격에 대한 PlayMontage Task 설정
 	AddMotionWarpingPoint();
-	UAbilityTask_PlayMontageAndWait* PlayTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, ComboMontage, 1.f, FName("Combo1"));
+	UAbilityTask_PlayMontageAndWait* PlayTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
+		this, NAME_None, ComboMontage, 1.f, FName("Combo1")
+	);
 	PlayTask->OnBlendOut.AddDynamic(this, &URedCMeleeAttackAbility::OnEndAbility);
 	PlayTask->OnCancelled.AddDynamic(this, &URedCMeleeAttackAbility::OnEndAbility);
 	PlayTask->OnInterrupted.AddDynamic(this, &URedCMeleeAttackAbility::OnEndAbility);
@@ -78,9 +80,9 @@ void URedCMeleeAttackAbility::SetupMeleeAttackTasks()
 	PlayTask->ReadyForActivation();
 	AddWatchedTask(PlayTask);
 
-	
-	
-	UAbilityTask_WaitGameplayEvent* WaitTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, GetComboChangedEventTag(), nullptr, false, false);
+	UAbilityTask_WaitGameplayEvent* WaitTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+		this, GetComboChangedEventTag(), nullptr, false, false
+	);
 	WaitTask->EventReceived.AddDynamic(this, &URedCMeleeAttackAbility::ComboChangedEventReceived);
 	WaitTask->ReadyForActivation();
 	AddWatchedTask(WaitTask);
@@ -116,13 +118,13 @@ void URedCMeleeAttackAbility::HandleInputPress(float TimeWaited)
 // 입력 Task를 통해 실행되면 NextCombo에 따라 다음 콤보를 실행
 void URedCMeleeAttackAbility::TryCommitCombo()
 {
-	if (NextComboName == NAME_None or NextComboName == FName("End"))
+	UAnimInstance* OwnerAnimInst = GetOwnerAnimInstance();
+	if (not OwnerAnimInst)
 	{
 		return;
 	}
 
-	UAnimInstance* OwnerAnimInst = GetOwnerAnimInstance();
-	if (not OwnerAnimInst)
+	if (NextComboName == NAME_None or NextComboName == FName("End"))
 	{
 		return;
 	}
@@ -131,9 +133,7 @@ void URedCMeleeAttackAbility::TryCommitCombo()
 	{
 		return;
 	}
-	//UE_LOG(LogGA_LAttack, Warning, TEXT("Try Commit Combo : %s"), *NextComboName.ToString());
 	AddMotionWarpingPoint();
-	// Jump To Section 메소드를 활용하여 다음 Combo로 바로 실행
 	OwnerAnimInst->Montage_JumpToSection(NextComboName, ComboMontage);
 }
 
@@ -147,7 +147,6 @@ void URedCMeleeAttackAbility::AddMotionWarpingPoint()
 	if (IMotionWarpingInterface* MWInterface = Cast<IMotionWarpingInterface>(GetAvatarActorFromActorInfo()))
 	{
 		uint8 MovementState =  MWInterface->GetCurrentMovementEffect();
-		//UE_LOG(LogGA_LAttack, Warning, TEXT("Add Motion Warping Point MovementState : %d"), MovementState);
 		float DistanceMultiplier = 0.f;
 		switch (MovementState)
 		{
@@ -164,7 +163,6 @@ void URedCMeleeAttackAbility::AddMotionWarpingPoint()
 			DistanceMultiplier = 1.f;
 			break;
 		}
-		//UE_LOG(LogRedC, Warning, TEXT("Distance Multiplier : %f, Movement State : %d"), DistanceMultiplier, MovementState);
 		FMotionWarpingParam Param = GenerateMotionWarpingParamByCurrentCombo(DistanceMultiplier);
 		MWInterface->RemoveAllMotionWarpingTarget();
 		
@@ -189,10 +187,7 @@ FMotionWarpingParam URedCMeleeAttackAbility::GenerateMotionWarpingParamByCurrent
 	if (CurrentComboName == NAME_None)
 	{
 		CurrentComboName = "Combo1";
-		//float SkillLength = *ComboSKillLength.Find("Combo1") * DistanceMultiplier;
-		//SKillTargetPoint = GetAvatarActorFromActorInfo()->GetActorLocation() + GetAvatarActorFromActorInfo()->GetActorForwardVector() * DistanceMultiplier;
 	}
-	//UE_LOG(LogRedC, Warning, TEXT("CurrentComboName : %s"), *CurrentComboName.ToString());
 	float SkillLength = *ComboSKillLength.Find(CurrentComboName) * DistanceMultiplier;
 	
 	SKillTargetPoint = GetAvatarActorFromActorInfo()->GetActorLocation() + GetActorInfo().PlayerController->GetControlRotation().Vector() * SkillLength;
