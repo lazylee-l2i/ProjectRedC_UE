@@ -469,17 +469,12 @@ graph TB
 
 ### 5.3 성능 최적화 전략
 
-#### 5.3.1 메모리 최적화
-- **WeakObjectPtr**: Actor 참조 시 메모리 누수 방지
-- **ASC 캐싱**: 반복적인 GetComponent 호출 제거
-- **조건부 틱**: 필요할 때만 Component Tick 활성화
-
-#### 5.3.2 네트워크 최적화
+#### 5.3.1 네트워크 최적화
 - **역할 기반 실행**: AI는 서버, Player는 클라이언트에서 trace
 - **RPC 최소화**: 필요한 데이터만 전송
 - **COND_None vs COND_OwnerOnly**: 복제 조건 세밀하게 설정
 
-#### 5.3.3 계산 최적화
+#### 5.3.2 계산 최적화
 ```cpp
 // 사거리 검증: 제곱근 계산 회피
 float DistSquared = FVector::DistSquared(A, B);
